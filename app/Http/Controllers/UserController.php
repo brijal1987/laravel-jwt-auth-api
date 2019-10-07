@@ -26,6 +26,31 @@ class UserController extends Controller
         }
         return $token;
     }
+
+    private function csvToArray($filename = '', $delimiter = ',')
+    {
+        if (!file_exists($filename) || !is_readable($filename))
+            return false;
+
+        $header = null;
+        $data = array();
+        $count =0;
+        if (($handle = fopen($filename, 'r')) !== false)
+        {
+            while (($row = fgetcsv($handle, 1000, $delimiter)) !== false)
+            {
+                $count++;
+                if (!$header)
+                    $header = $row;
+                else
+                    $data[] = array_combine($header, $row);
+                if($count ==5) break;
+            }
+            fclose($handle);
+        }
+
+        return $data;
+    }
     public function login(Request $request)
     {
         $user = \App\User::where('email', $request->email)->get()->first();
@@ -63,6 +88,15 @@ class UserController extends Controller
         else
             $response = ['success'=>false, 'data'=>'Couldnt register user'];
 
+        return response()->json($response, 201);
+    }
+
+    public function getData()
+    {
+        $file = public_path('titanic.csv');
+
+        $responseArr = self::csvToArray($file);
+        $response = ['success'=>true, 'data'=>$responseArr];
         return response()->json($response, 201);
     }
 }
